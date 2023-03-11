@@ -1,0 +1,30 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model userScore {
+  id            Int      @id @default(autoincrement())
+  guildId       String
+  userId        String
+  score         Int
+  attemptDate   DateTime @default(now())
+}
+
+model button {
+  guildId             String @id
+  categoryId          String
+  buttonChannelId     String
+  messageId           String
+  seconds             Int
+  discussionChannelId String
+  voiceChannelId      String
+  emojiId             String
+}
