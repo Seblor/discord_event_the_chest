@@ -165,7 +165,7 @@ Petits détails :
 
   addGameStateChangeTimers (): void {
     const now = Date.now()
-    console.log(this.startTimestamp, this.endTimestamp, new Date(), now)
+
     const startDelay = this.startTimestamp.getTime() - now
     const endDelay = this.endTimestamp.getTime() - now
 
@@ -322,7 +322,7 @@ Petits détails :
       const buttonChannel = await guild.channels.fetch(buttonChannelQuery.buttonChannelId) as TextChannel
       // Create button message
       const buttonMessage = await buttonChannel.send({
-        content: 'The Button',
+        content: await this.generateButtonMessageContent(),
         components: [
           this.generateButtons()
         ]
