@@ -1,8 +1,6 @@
-import { ChannelType, type Client, SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, type TextChannel, type CommandInteraction, ButtonStyle, type Emoji, type Role, type CategoryChannel } from 'discord.js'
+import { ChannelType, type Client, SlashCommandBuilder, PermissionFlagsBits, type CommandInteraction, type Emoji, type Role, type CategoryChannel } from 'discord.js'
+import Game from './Game'
 import { INTERACTIONS } from './ids'
-import prisma from './prisma'
-import { clearTickCache } from './tick'
-import { connectToVoiceChannel } from './voice'
 
 export function registerSlashCommand (client: Client): void {
   void client.application?.commands.set([
@@ -28,27 +26,51 @@ export function registerSlashCommand (client: Client): void {
           .setName('diamond_emoji')
           .setDescription('The diamond emoji to use in the button message')
           .setRequired(true)
+      )
+      .addIntegerOption(option =>
+        option
+          .setName('start_timestamp')
+          .setDescription('The start timestamp of the event')
+          .setRequired(true)
+      )
+      .addIntegerOption(option =>
+        option
+          .setName('end_timestamp')
+          .setDescription('The end timestamp of the event')
+          .setRequired(true)
       ),
     new SlashCommandBuilder()
       .setName(INTERACTIONS.SLASH_COMMANDS.RESENT_BUTTON_MESSAGE)
       .setDescription('Resends the button message')
-      .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+      .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+      .setName(INTERACTIONS.SLASH_COMMANDS.SCOREBOARD)
+      .setDescription('Affiche le tableau des scores')
+      .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages)
   ])
 }
 
 export async function onInitInteraction (interaction: CommandInteraction): Promise<void> {
+  if (interaction.guild == null) {
+    void interaction.reply('This command can only be used in a guild')
+    return
+  }
   const categoryChannelId = interaction.options.get('category', true).value as string
   if (categoryChannelId === null) {
     void interaction.reply('No category provided')
     return
   }
-  const categoryChannel = await interaction.guild?.channels.fetch(categoryChannelId) as CategoryChannel
+  const categoryChannel = await interaction.guild.channels.fetch(categoryChannelId) as CategoryChannel
   const muteRoleId = interaction.options.get('mute_role', true).value as string
   if (muteRoleId === null) {
     void interaction.reply('No mute role provided')
     return
   }
-  const muteRole = await interaction.guild?.roles.fetch(muteRoleId) as Role
+  const muteRole = await interaction.guild.roles.fetch(muteRoleId) as Role
+  if (muteRole == null) {
+    void interaction.reply('Mute role not found')
+    return
+  }
   if ((await categoryChannel.fetch()).children.cache.size > 0) {
     void interaction.reply('Category is not empty')
     return
@@ -63,106 +85,24 @@ export async function onInitInteraction (interaction: CommandInteraction): Promi
     void interaction.reply('Emoji not valid')
     return
   }
-  const emoji = await interaction.guild?.emojis.fetch(emojiId) as Emoji
+  const emoji = await interaction.guild.emojis.fetch(emojiId) as Emoji
   if (emoji == null) {
     void interaction.reply('Emoji not found')
     return
   }
 
-  await categoryChannel.permissionOverwrites.set([
-    {
-      id: muteRole.id,
-      deny: ['SendMessages', 'AddReactions', 'CreatePublicThreads', 'CreatePrivateThreads', 'Speak']
-    }
-  ])
-
   void interaction.reply({
-    content: 'Creating channels...',
+    content: 'Initializing...',
     ephemeral: true
   })
 
-  // Create channels "The Button" and "The Button - Discussion"
-  const [buttonChannel, discussionChannel, voiceChannel] = await Promise.all([
-    categoryChannel.guild.channels.create({
-      name: 'The Button',
-      type: ChannelType.GuildText,
-      parent: categoryChannel.id,
-      position: 1,
-      permissionOverwrites: [
-        {
-          id: categoryChannel.guild.roles.everyone.id,
-          deny: ['SendMessages', 'AddReactions', 'CreatePublicThreads', 'CreatePrivateThreads'],
-          allow: ['UseApplicationCommands']
-        },
-        {
-          id: interaction.client.user?.id,
-          allow: ['SendMessages']
-        }
-      ]
-    }),
-    categoryChannel.guild.channels.create({
-      name: 'The Button - Discussion',
-      type: ChannelType.GuildText,
-      parent: categoryChannel.id,
-      position: 2
-    }),
-    categoryChannel.guild.channels.create({
-      name: 'The Button - Discussion',
-      type: ChannelType.GuildVoice,
-      parent: categoryChannel.id,
-      position: 3
-    })
-  ])
-
-  void interaction.editReply({
-    content: 'Creating button message...'
+  await Game.initGame(interaction.guild, {
+    category: categoryChannel,
+    muteRole,
+    diamondEmoji: emoji,
+    startTimestamp: new Date(interaction.options.get('start_timestamp', true).value as number),
+    endTimestamp: new Date(interaction.options.get('end_timestamp', true).value as number)
   })
-
-  // Create button message
-  const buttonMessage = await buttonChannel.send({
-    content: 'The Button',
-    components: [
-      new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId(INTERACTIONS.BUTTONS.THE_BUTTON)
-          .setEmoji(emojiId)
-          .setLabel('0 secondes')
-          .setDisabled(true)
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(INTERACTIONS.BUTTONS.READ_MY_SCORE)
-          .setLabel('Voir mes scores')
-          .setDisabled(true)
-          .setStyle(ButtonStyle.Secondary)
-      )
-    ]
-  })
-
-  await prisma.button.upsert({
-    create: {
-      guildId: categoryChannel.guild.id,
-      categoryId: categoryChannel.id,
-      buttonChannelId: buttonChannel.id,
-      messageId: buttonMessage.id,
-      discussionChannelId: discussionChannel.id,
-      voiceChannelId: voiceChannel.id,
-      emojiId,
-      seconds: 0
-    },
-    update: {
-      guildId: categoryChannel.guild.id,
-      categoryId: categoryChannel.id,
-      buttonChannelId: buttonChannel.id,
-      messageId: buttonMessage.id,
-      discussionChannelId: discussionChannel.id,
-      voiceChannelId: voiceChannel.id
-    },
-    where: {
-      guildId: categoryChannel.guild.id
-    }
-  })
-
-  await connectToVoiceChannel(categoryChannel.guild)
 
   void interaction.editReply({
     content: 'Finished initializing!'
@@ -170,58 +110,41 @@ export async function onInitInteraction (interaction: CommandInteraction): Promi
 }
 
 export async function onResendButtonMessageInteraction (interaction: CommandInteraction): Promise<void> {
-  await resendButtonMessage(interaction.client)
-  void interaction.reply({
-    content: 'Resent button message',
-    ephemeral: true
-  })
+  if (interaction.guild == null) {
+    void interaction.reply('This command can only be used in a guild')
+    return
+  }
+  const game = await Game.getGame(interaction.guild)
+  void game?.resendButtonMessage()
 }
 
-export async function resendButtonMessage (client: Client): Promise<void> {
-  await Promise.all(
-    client.guilds.cache.map(async guild => {
-      const buttonChannelQuery = await prisma.button.findFirst({
-        select: {
-          buttonChannelId: true,
-          emojiId: true,
-          messageId: true
-        },
-        where: {
-          guildId: guild.id
-        }
-      })
-      if (buttonChannelQuery === null) {
-        return
-      }
-      const buttonChannel = await guild.channels.fetch(buttonChannelQuery.buttonChannelId) as TextChannel
-      // Create button message
-      const buttonMessage = await buttonChannel.send({
-        content: 'The Button',
-        components: [
-          new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-              .setCustomId(INTERACTIONS.BUTTONS.THE_BUTTON)
-              .setLabel('0 secondes')
-              .setEmoji(buttonChannelQuery.emojiId)
-              .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-              .setCustomId(INTERACTIONS.BUTTONS.READ_MY_SCORE)
-              .setLabel('Voir mon score')
-              .setStyle(ButtonStyle.Secondary)
-          )
-        ]
-      })
-      const oldMessage = await buttonChannel.messages.fetch(buttonChannelQuery.messageId)
-      await oldMessage.delete()
-      await prisma.button.update({
-        where: {
-          guildId: guild.id
-        },
-        data: {
-          messageId: buttonMessage.id
-        }
-      })
-      clearTickCache(guild)
-    })
-  )
+const scoreboardLastCalls = new Map<string, number>()
+
+export async function onScoreboardCommand (interaction: CommandInteraction): Promise<void> {
+  if (interaction.guild == null) {
+    void interaction.reply('This command can only be used in a guild')
+    return
+  }
+
+  // Check if the command has been called recently
+  if (scoreboardLastCalls.has(interaction.guild.id)) {
+    const lastCall = scoreboardLastCalls.get(interaction.guild.id)
+    if (lastCall != null && Date.now() - lastCall < 60e3) {
+      void interaction.reply('Merci d\'attendre 1 minute avant de réutiliser cette commande')
+      return
+    }
+  }
+  scoreboardLastCalls.set(interaction.guild.id, Date.now())
+
+  // Get game and send scoreboard as text file
+  const game = await Game.getGame(interaction.guild)
+  if (game == null) {
+    void interaction.reply('La commande n\'a pas fonctionée, merci de réessayer un peu plus tard')
+    return
+  }
+  const scoreboardAttachment = await game.generateFullScoreboardAsAttachment()
+  void interaction.reply({
+    content: 'Voici le tableau des scores :',
+    files: [scoreboardAttachment]
+  })
 }

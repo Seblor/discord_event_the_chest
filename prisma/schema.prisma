@@ -11,20 +11,22 @@ datasource db {
 }
 
 model userScore {
-  id            Int      @id @default(autoincrement())
-  guildId       String
-  userId        String
-  score         Int
-  attemptDate   DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  guildId     String
+  userId      String
+  score       Int
+  attemptDate DateTime @default(now())
 }
 
 model button {
-  guildId             String @id
+  guildId             String   @id
   categoryId          String
   buttonChannelId     String
   messageId           String
-  seconds             Int
   discussionChannelId String
   voiceChannelId      String
   emojiId             String
+  startTimestamp      DateTime
+  endTimestamp        DateTime
+  seconds             Int
 }

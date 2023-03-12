@@ -1,5 +1,4 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type Client, type Message, type TextChannel, type Guild, AttachmentBuilder } from 'discord.js'
-import { resendButtonMessage } from './commands'
 import { INTERACTIONS } from './ids'
 import prisma from './prisma'
 import { formatScore, rankToString } from './utils'

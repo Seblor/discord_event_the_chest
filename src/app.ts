@@ -1,10 +1,9 @@
 // Connect to Discord
 import { Client, IntentsBitField, OAuth2Scopes, type Interaction } from 'discord.js'
-import { onInitInteraction, onResendButtonMessageInteraction, registerSlashCommand } from './commands'
+import { onInitInteraction, onResendButtonMessageInteraction, onScoreboardCommand, registerSlashCommand } from './commands'
 import { onButtonInteraction, onReadMyScoreInteraction } from './buttons'
-import { startTicks } from './tick'
-import { connectToVoiceChannel } from './voice'
 import { INTERACTIONS } from './ids'
+import Game from './Game'
 
 const client = new Client({
   intents: [
@@ -44,23 +43,9 @@ client.on('ready', async () => {
     ]
   }))
   registerSlashCommand(client)
-  await Promise.all(guilds.map(async guild => { await connectToVoiceChannel(await guild.fetch()) }))
-
-  // setInterval(() => {
-  //   void tick(client)
-  // }, 2e3)
-
-  const startTime = process.env.START_TIMESTAMP
-  if (startTime != null) {
-    const start = new Date(parseInt(startTime))
-    const now = new Date()
-    const diff = start.getTime() - now.getTime()
-    console.log(`Starting in ${diff}ms`)
-
-    setTimeout(() => {
-      void startTicks(client)
-    }, diff)
-  }
+  await Promise.all(guilds.map(async guild => {
+    void Game.getGame(await guild.fetch())
+  }))
 })
 
 client.on('interactionCreate', (interaction: Interaction) => {
@@ -71,6 +56,9 @@ client.on('interactionCreate', (interaction: Interaction) => {
         break
       case INTERACTIONS.SLASH_COMMANDS.RESENT_BUTTON_MESSAGE:
         void onResendButtonMessageInteraction(interaction)
+        break
+      case INTERACTIONS.SLASH_COMMANDS.SCOREBOARD:
+        void onScoreboardCommand(interaction)
         break
 
       default:
