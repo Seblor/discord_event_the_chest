@@ -109,9 +109,9 @@ export default class Game {
       await buttonChannel.send({
         content: `
 **lisez attentivement !**
-En dessous de ce message se trouve un bouton avec un nombre de diamants qui augmente au fil du temps. Ce nombre de diamants est un pot commun qui est partagé avec tout le monde sur le serveur.
-Lorsqu'une personne clique sur ce bouton, il prends tous les diamants, et le pot retombe à 0.
-Votre score utilisé pour le classement est la somme de ce que vous avez récupéré.
+En dessous de ce message se trouve un bouton avec un nombre de diamants qui augmente au fil du temps. Ces diamants sont stockés dans un coffre commun qui est partagé avec tout le monde sur le serveur.
+Lorsqu'une personne clique sur ce bouton, il prends tous les diamants, et le coffre est vidé.
+Votre score utilisé pour le classement est le total des diamants que vous avez récupéré.
 **Vous avez un nombre de clics limité** : 3 clics par personne (ou 4 pour les membres qui boostent le serveur, merci à vous <:merci:885221354834636810>)
 L'évènement commence à <t:${Math.floor(this.startTimestamp.getTime() / 1000)}> et fini à <t:${Math.floor(this.endTimestamp.getTime() / 1000)}> (pour un total de 36 heures).
 Bien évidemment, ça serait moins intéressant sans un prix à la clé, c'est pourquoi **le gagnant recevra un compte Minecraft !**
@@ -128,7 +128,7 @@ Petits détails :
 
       // Create button message
       const buttonMessage = await buttonChannel.send({
-        content: `Le jeu n'a pas encore commencé, revenez dans <t:${Math.floor(this.startTimestamp.getTime() / 1000)}:R> :)`,
+        content: `Le jeu n'a pas encore commencé, revenez <t:${Math.floor(this.startTimestamp.getTime() / 1000)}:R> :)`,
         components: [
           this.generateButtons()
         ]
@@ -276,7 +276,7 @@ Petits détails :
       allowedMentions: {
         users: []
       }
-    })
+    }).catch(() => {})
     const sendEnd = Date.now()
     const delta = sendEnd - sendStart
     if (delta > 1e3) {
@@ -325,7 +325,10 @@ Petits détails :
         content: await this.generateButtonMessageContent(),
         components: [
           this.generateButtons()
-        ]
+        ],
+        allowedMentions: {
+          users: []
+        }
       })
       const oldMessage = await buttonChannel.messages.fetch(buttonChannelQuery.messageId)
       await oldMessage.delete()

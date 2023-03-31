@@ -27,8 +27,8 @@ export async function connectToVoiceChannel (guild: Guild): Promise<void> {
 
 export async function playButtonSound (guild: Guild): Promise<void> {
   const resources = {
-    buttonPress: createAudioResource(join(__dirname, '..', 'assets', 'Stone_button_press.ogg')),
-    buttonRelease: createAudioResource(join(__dirname, '..', 'assets', 'Stone_button_unpress.ogg'))
+    buttonPress: createAudioResource(join(__dirname, '..', 'assets', 'Chest_open.ogg')),
+    buttonRelease: createAudioResource(join(__dirname, '..', 'assets', 'Chest_close.ogg'))
   }
   const voiceConnection = getVoiceConnection(guild.id)
   if (voiceConnection === undefined) {
