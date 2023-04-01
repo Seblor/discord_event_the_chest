@@ -59,7 +59,7 @@ export default class Game {
 
     setInterval(() => {
       // Random between 0 and 3
-      this.antibot = Math.floor(Math.random() * 5)
+      this.antibot = Math.floor(Math.random() * 4)
     }, 60e3)
   }
 
