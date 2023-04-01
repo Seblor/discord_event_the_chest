@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type TextChannel, type Client, type Guild, type CategoryChannel, type Role, type Emoji, AttachmentBuilder, ChannelType } from 'discord.js'
 import { INTERACTIONS } from './ids'
 import prisma from './prisma'
-import { formatScore, rankToString } from './utils'
+import { formatScore, rankToString, replaceNumbers } from './utils'
 import { connectToVoiceChannel } from './voice'
 
 const DEFAULT_EMOJI = '💎'
@@ -298,36 +298,44 @@ Petits détails :
 
   generateButtons (value: number = 0): ActionRowBuilder<ButtonBuilder> {
     const disabled = this.state !== GAME_STATE.STARTED // Disable button if game is not ongoing
-    return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    const buttons = [
       new ButtonBuilder()
         .setCustomId(this.antibot === 0 ? INTERACTIONS.BUTTONS.THE_BUTTON : INTERACTIONS.BUTTONS.THE_BUTTON_ANTIBOT_0)
-        .setLabel(formatScore(value))
+        .setLabel(replaceNumbers(formatScore(value), this.antibot))
         .setDisabled(disabled || this.antibot !== 0)
         .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(getStyleFromAntibot(this.antibot)),
       new ButtonBuilder()
         .setCustomId(this.antibot === 1 ? INTERACTIONS.BUTTONS.THE_BUTTON : INTERACTIONS.BUTTONS.THE_BUTTON_ANTIBOT_1)
-        .setLabel(formatScore(value))
+        .setLabel(replaceNumbers(formatScore(value), this.antibot))
         .setDisabled(disabled || this.antibot !== 1)
         .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(getStyleFromAntibot(this.antibot)),
       new ButtonBuilder()
         .setCustomId(this.antibot === 2 ? INTERACTIONS.BUTTONS.THE_BUTTON : INTERACTIONS.BUTTONS.THE_BUTTON_ANTIBOT_2)
-        .setLabel(formatScore(value))
+        .setLabel(replaceNumbers(formatScore(value), this.antibot))
         .setDisabled(disabled || this.antibot !== 2)
         .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(getStyleFromAntibot(this.antibot)),
       new ButtonBuilder()
         .setCustomId(this.antibot === 3 ? INTERACTIONS.BUTTONS.THE_BUTTON : INTERACTIONS.BUTTONS.THE_BUTTON_ANTIBOT_3)
-        .setLabel(formatScore(value))
+        .setLabel(replaceNumbers(formatScore(value), this.antibot))
         .setDisabled(disabled || this.antibot !== 3)
         .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId(INTERACTIONS.BUTTONS.READ_MY_SCORE)
-        .setDisabled(this.state === GAME_STATE.WAITING) // Disable button if game never started
-        .setLabel('Compter mes diamants')
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(getStyleFromAntibot(this.antibot))
+    ]
+
+    const countButton = new ButtonBuilder()
+      .setCustomId(INTERACTIONS.BUTTONS.READ_MY_SCORE)
+      .setDisabled(this.state === GAME_STATE.WAITING) // Disable button if game never started
+      .setLabel('Compter mes diamants')
+      .setStyle(ButtonStyle.Secondary)
+
+    // insert count button at random position using this.antibot
+    buttons.splice(this.antibot, 0, countButton)
+
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
+      ...buttons
     )
   }
 
@@ -489,5 +497,18 @@ Petits détails :
     await game.init(muteRole)
 
     return game
+  }
+}
+
+function getStyleFromAntibot (antibot: number): ButtonStyle {
+  switch (antibot) {
+    case 1:
+      return ButtonStyle.Primary
+    case 2:
+      return ButtonStyle.Secondary
+    case 3:
+      return ButtonStyle.Success
+    default:
+      return ButtonStyle.Danger
   }
 }

@@ -32,9 +32,26 @@ export function secondsToStr (seconds: number): string {
 }
 
 export function formatScore (score: number): string {
-  return `${score} diamant${score > 1 ? 's' : ''}`
+  return `${String(score)} diamant${score > 1 ? 's' : ''}`
 }
 
 export function rankToString (rank: number): string {
   return rank === 0 || Number.isNaN(rank) ? 'Premier' : rank === 1 ? 'Second' : rank === 2 ? 'Troisième' : `${rank + 1}ème`
+}
+
+export function replaceNumbers (score: string, antibot = 0): string {
+  return score.replace(/\d/g, number => NUMBERS_MAPPING[number as ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9')][antibot])
+}
+
+const NUMBERS_MAPPING = {
+  0: ['𝟎', '𝟢', '𝟬', '𝟶'],
+  1: ['𝟏', '𝟣', '𝟭', '𝟷'],
+  2: ['𝟐', '𝟤', '𝟮', '𝟸'],
+  3: ['𝟑', '𝟥', '𝟯', '𝟹'],
+  4: ['𝟒', '𝟦', '𝟰', '𝟺'],
+  5: ['𝟓', '𝟧', '𝟱', '𝟻'],
+  6: ['𝟔', '𝟨', '𝟲', '𝟼'],
+  7: ['𝟕', '𝟩', '𝟳', '𝟽'],
+  8: ['𝟖', '𝟪', '𝟴', '𝟾'],
+  9: ['𝟗', '𝟫', '𝟵', '𝟿']
 }
