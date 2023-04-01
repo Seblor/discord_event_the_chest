@@ -22,6 +22,9 @@ export default class Game {
   endTimestamp: Date
   tickInterval: NodeJS.Timer | undefined
 
+  // Random between 0 and 3
+  antibot = Math.floor(Math.random() * 4)
+
   constructor (guild: Guild, {
     category,
     diamondEmoji,
@@ -53,6 +56,11 @@ export default class Game {
 
     Game.games.set(guild.id, this)
     void connectToVoiceChannel(guild)
+
+    setInterval(() => {
+      // Random between 0 and 3
+      this.antibot = Math.floor(Math.random() * 5)
+    }, 60e3)
   }
 
   async init (muteRole: Role): Promise<void> {
@@ -276,7 +284,7 @@ Petits détails :
       allowedMentions: {
         users: []
       }
-    }).catch(() => {})
+    }).catch(console.log)
     const sendEnd = Date.now()
     const delta = sendEnd - sendStart
     if (delta > 1e3) {
@@ -289,11 +297,30 @@ Petits détails :
   }
 
   generateButtons (value: number = 0): ActionRowBuilder<ButtonBuilder> {
+    const disabled = this.state !== GAME_STATE.STARTED // Disable button if game is not ongoing
     return new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
-        .setCustomId(INTERACTIONS.BUTTONS.THE_BUTTON)
+        .setCustomId(this.antibot === 0 ? INTERACTIONS.BUTTONS.THE_BUTTON : INTERACTIONS.BUTTONS.THE_BUTTON_ANTIBOT_0)
         .setLabel(formatScore(value))
-        .setDisabled(this.state !== GAME_STATE.STARTED) // Disable button if game is not ongoing
+        .setDisabled(disabled || this.antibot !== 0)
+        .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(this.antibot === 1 ? INTERACTIONS.BUTTONS.THE_BUTTON : INTERACTIONS.BUTTONS.THE_BUTTON_ANTIBOT_1)
+        .setLabel(formatScore(value))
+        .setDisabled(disabled || this.antibot !== 1)
+        .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(this.antibot === 2 ? INTERACTIONS.BUTTONS.THE_BUTTON : INTERACTIONS.BUTTONS.THE_BUTTON_ANTIBOT_2)
+        .setLabel(formatScore(value))
+        .setDisabled(disabled || this.antibot !== 2)
+        .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(this.antibot === 3 ? INTERACTIONS.BUTTONS.THE_BUTTON : INTERACTIONS.BUTTONS.THE_BUTTON_ANTIBOT_3)
+        .setLabel(formatScore(value))
+        .setDisabled(disabled || this.antibot !== 3)
         .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()

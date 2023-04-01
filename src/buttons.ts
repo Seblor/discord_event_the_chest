@@ -14,6 +14,14 @@ export async function onButtonInteraction (interaction: ButtonInteraction): Prom
     console.error('Failed to fetch member', member.user.username)
     return
   }
+  // If member joined less that 2 days ago
+  if (fetchedMember.joinedTimestamp !== null && fetchedMember.joinedTimestamp > Date.now() - 1000 * 60 * 60 * 24 * 2) {
+    void interaction.reply({
+      content: 'Vous avez rejoint le serveur il y a moins de 2 jours, vous ne pouvez pas encore utiliser le bouton',
+      ephemeral: true
+    })
+    return
+  }
   const guild = interaction.guild
   if (guild === null) {
     console.error('No guild found for interaction', interaction.id)
