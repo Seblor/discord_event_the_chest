@@ -35,6 +35,9 @@ export function formatScore (score: number): string {
   return `${String(score)} diamant${score > 1 ? 's' : ''}`
 }
 
+/**
+ * @param rank 0-based rank
+ */
 export function rankToString (rank: number): string {
   return rank === 0 || Number.isNaN(rank) ? 'Premier' : rank === 1 ? 'Second' : rank === 2 ? 'Troisième' : `${rank + 1}ème`
 }

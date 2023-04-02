@@ -79,6 +79,4 @@ client.on('interactionCreate', (interaction: Interaction) => {
   }
 })
 
-// Path: src/app.ts
-// Login to Discord with your client's token
 void client.login(process.env.DISCORD_TOKEN)

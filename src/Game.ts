@@ -297,13 +297,11 @@ Petits détails :
   }
 
   generateButtons (value: number = 0): ActionRowBuilder<ButtonBuilder> {
-    const disabled = this.state !== GAME_STATE.STARTED // Disable button if game is not ongoing
-
     return new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(INTERACTIONS.BUTTONS.THE_BUTTON)
         .setLabel(replaceNumbers(formatScore(value), this.antibot))
-        .setDisabled(disabled)
+        .setDisabled(this.state !== GAME_STATE.STARTED) // Disable button if game is not ongoing
         .setEmoji(this.diamondEmoji?.id ?? DEFAULT_EMOJI)
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()

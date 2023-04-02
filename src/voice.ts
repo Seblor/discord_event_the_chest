@@ -26,6 +26,7 @@ export async function connectToVoiceChannel (guild: Guild): Promise<void> {
 }
 
 export async function playButtonSound (guild: Guild): Promise<void> {
+  // Audio files were originally the Minecraft button's sounds but were changed to the chest's sounds to use a theme more understandable with the bot's concept
   const resources = {
     buttonPress: createAudioResource(join(__dirname, '..', 'assets', 'Chest_open.ogg')),
     buttonRelease: createAudioResource(join(__dirname, '..', 'assets', 'Chest_close.ogg'))
