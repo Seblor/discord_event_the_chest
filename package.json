@@ -6,7 +6,7 @@
   "scripts": {
   },
   "keywords": [],
-  "author": "",
+  "author": "Seblor",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^18.14.6",
